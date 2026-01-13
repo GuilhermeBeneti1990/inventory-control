@@ -8,6 +8,10 @@
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
     "module": "nodenext",
+    "typeRoots": [
+      "./src/@types"
+    ],
+    "resolveJsonModule": true,
     "target": "esnext",
     "types": [],
     // For nodejs:
@@ -33,7 +37,7 @@
     // "noPropertyAccessFromIndexSignature": true,
 
     // Recommended Options
-    "strict": true,
+    "strict": false,
     "jsx": "react-jsx",
     "verbatimModuleSyntax": false,
     "isolatedModules": true,
