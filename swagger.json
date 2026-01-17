@@ -1,0 +1,539 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Controle Estoque API",
+    "description": "API para controle de estoque - gerenciamento de usuários, categorias, produtos e vendas",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3333/v1",
+      "description": "Servidor local"
+    }
+  ],
+  "tags": [
+    { "name": "Health", "description": "Endpoints de saúde da aplicação" },
+    { "name": "Users", "description": "Gerenciamento de usuários" },
+    { "name": "Categories", "description": "Gerenciamento de categorias" },
+    { "name": "Products", "description": "Gerenciamento de produtos" },
+    { "name": "Sales", "description": "Operações de venda" }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Health check",
+        "description": "Verifica se a aplicação está em execução",
+        "responses": {
+          "200": {
+            "description": "Aplicação OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "ok": { "type": "boolean", "example": true } }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users": {
+      "post": {
+        "tags": ["Users"],
+        "summary": "Criar usuário",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "email", "password"],
+                "properties": {
+                  "name": { "type": "string", "example": "João Silva" },
+                  "email": { "type": "string", "format": "email", "example": "joao@email.com" },
+                  "password": { "type": "string", "format": "password", "example": "senha123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Usuário criado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string", "format": "uuid" },
+                    "name": { "type": "string" },
+                    "email": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Erro na requisição (ex: email já existe)" }
+        }
+      }
+    },
+    "/users/auth": {
+      "post": {
+        "tags": ["Users"],
+        "summary": "Autenticar usuário",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email", "example": "joao@email.com" },
+                  "password": { "type": "string", "format": "password", "example": "senha123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Autenticação realizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string", "format": "uuid" },
+                    "name": { "type": "string" },
+                    "email": { "type": "string" },
+                    "token": { "type": "string", "description": "JWT para uso no header Authorization: Bearer {token}" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Email ou senha incorretos" }
+        }
+      }
+    },
+    "/users/me": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Detalhes do usuário autenticado",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Dados do usuário",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string", "format": "uuid" },
+                    "name": { "type": "string" },
+                    "email": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Não autorizado - token inválido ou ausente" }
+        }
+      }
+    },
+    "/users/remove": {
+      "delete": {
+        "tags": ["Users"],
+        "summary": "Remover usuário",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Usuário removido" },
+          "400": { "description": "Erro na requisição" }
+        }
+      }
+    },
+    "/categories": {
+      "get": {
+        "tags": ["Categories"],
+        "summary": "Listar categorias",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Lista de categorias",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "string", "format": "uuid" },
+                      "name": { "type": "string" },
+                      "created_at": { "type": "string", "format": "date-time" },
+                      "updated_at": { "type": "string", "format": "date-time" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Não autorizado" }
+        }
+      },
+      "post": {
+        "tags": ["Categories"],
+        "summary": "Criar categoria",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string", "example": "Eletrônicos" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Categoria criada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string", "format": "uuid" },
+                    "name": { "type": "string" },
+                    "created_at": { "type": "string", "format": "date-time" },
+                    "updated_at": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Não autorizado" },
+          "400": { "description": "Erro na requisição" }
+        }
+      }
+    },
+    "/categories/edit": {
+      "put": {
+        "tags": ["Categories"],
+        "summary": "Editar categoria",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "category_id",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string", "example": "Eletrônicos Atualizado" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Categoria atualizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string", "format": "uuid" },
+                    "name": { "type": "string" },
+                    "created_at": { "type": "string", "format": "date-time" },
+                    "updated_at": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Não autorizado" },
+          "400": { "description": "Erro na requisição" }
+        }
+      }
+    },
+    "/categories/remove": {
+      "delete": {
+        "tags": ["Categories"],
+        "summary": "Remover categoria",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "category_id",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Categoria removida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Category deleted successfully!" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Não autorizado" },
+          "400": { "description": "Erro na requisição" }
+        }
+      }
+    },
+    "/products": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Listar produtos",
+        "description": "Lista todos os produtos ou filtra por categoria quando category_id é informado",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "category_id",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "Filtra produtos pela categoria"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de produtos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "string", "format": "uuid" },
+                      "name": { "type": "string" },
+                      "price": { "type": "string" },
+                      "description": { "type": "string" },
+                      "banner": { "type": "string" },
+                      "amount": { "type": "integer" },
+                      "category_id": { "type": "string", "format": "uuid" },
+                      "created_at": { "type": "string", "format": "date-time" },
+                      "updated_at": { "type": "string", "format": "date-time" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Não autorizado" }
+        }
+      },
+      "post": {
+        "tags": ["Products"],
+        "summary": "Criar produto",
+        "description": "Cria um produto com imagem. O campo 'file' deve conter a imagem do produto. O banner é gerado automaticamente a partir do arquivo enviado.",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file", "name", "price", "description", "category_id", "amount"],
+                "properties": {
+                  "file": { "type": "string", "format": "binary", "description": "Imagem do produto" },
+                  "name": { "type": "string", "example": "Notebook" },
+                  "price": { "type": "string", "example": "3500.00" },
+                  "description": { "type": "string", "example": "Notebook 15 polegadas" },
+                  "category_id": { "type": "string", "format": "uuid" },
+                  "amount": { "type": "integer", "example": 10 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Produto criado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string", "format": "uuid" },
+                    "name": { "type": "string" },
+                    "price": { "type": "string" },
+                    "description": { "type": "string" },
+                    "banner": { "type": "string" },
+                    "amount": { "type": "integer" },
+                    "category_id": { "type": "string", "format": "uuid" },
+                    "created_at": { "type": "string", "format": "date-time" },
+                    "updated_at": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Não autorizado" },
+          "400": { "description": "Erro na requisição ou falha no upload da imagem" }
+        }
+      }
+    },
+    "/products/edit": {
+      "put": {
+        "tags": ["Products"],
+        "summary": "Editar produto",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "price", "description", "banner", "product_id", "amount"],
+                "properties": {
+                  "name": { "type": "string", "example": "Notebook" },
+                  "price": { "type": "string", "example": "3500.00" },
+                  "description": { "type": "string", "example": "Notebook 15 polegadas" },
+                  "banner": { "type": "string", "description": "Nome do arquivo da imagem (ou caminho)" },
+                  "product_id": { "type": "string", "format": "uuid" },
+                  "amount": { "type": "integer", "example": 10 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Produto atualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string", "format": "uuid" },
+                    "name": { "type": "string" },
+                    "price": { "type": "string" },
+                    "description": { "type": "string" },
+                    "banner": { "type": "string" },
+                    "amount": { "type": "integer" },
+                    "category_id": { "type": "string", "format": "uuid" },
+                    "created_at": { "type": "string", "format": "date-time" },
+                    "updated_at": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Não autorizado" },
+          "400": { "description": "Erro na requisição" }
+        }
+      }
+    },
+    "/products/remove": {
+      "delete": {
+        "tags": ["Products"],
+        "summary": "Remover produto",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Produto removido" },
+          "401": { "description": "Não autorizado" },
+          "400": { "description": "Erro na requisição" }
+        }
+      }
+    },
+    "/sales/product": {
+      "put": {
+        "tags": ["Sales"],
+        "summary": "Registrar venda de produto",
+        "description": "Reduz a quantidade em estoque do produto. O product_id vai na query e amount no body.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["amount"],
+                "properties": {
+                  "amount": { "type": "integer", "example": 2, "description": "Quantidade vendida" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Venda registrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string", "format": "uuid" },
+                    "name": { "type": "string" },
+                    "amount": { "type": "integer", "description": "Nova quantidade em estoque" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Não autorizado" },
+          "400": { "description": "Product id ou amount inválidos, ou quantidade insuficiente em estoque" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Token JWT obtido em POST /users/auth. Use: Authorization: Bearer {token}"
+      }
+    }
+  }
+}
